@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HelixNode Bio-Dashboard</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            border: 2px solid #003b00;
+            padding: 20px;
+            background: #0a0a0a;
+            box-shadow: 0 0 15px #003b00;
+            height: fit-content;
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: 1px dashed #00ff41;
+            padding-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.5rem;
+        }
+
+        .input-section {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            background: #000;
+            border: 1px solid #00ff41;
+            color: #fff;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input:focus {
+            border: 1px solid #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            background: #003b00;
+            color: #00ff41;
+            border: 1px solid #00ff41;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #00ff41;
+            color: #000;
+        }
+
+        button.fetch-btn {
+            background: #002200;
+            border: 1px dashed #00ff41;
+            margin-top: 0;
+            width: auto;
+            padding: 5px 15px;
+            font-size: 0.8em;
+        }
+
+        .result-box {
+            display: none;
+            border: 1px solid #00ff41;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 5px #003b00;
+            }
+
+            to {
+                box-shadow: 0 0 20px #00ff41;
+            }
+        }
+
+        .big-text {
+            font-size: 3em;
+            font-weight: bold;
+        }
+
+        .sub-text {
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .log-section {
+            margin-top: 30px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+
+        .log-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .clear-btn {
+            border: 1px dashed red;
+            color: red;
+            background: #220000;
+        }
+
+        .clear-btn:hover {
+            background: red;
+            color: #000;
+        }
+        
+        #logListWrapper {
+            height: 250px;         
+            overflow-y: auto;  
+            border: 1px solid #111;
+            padding: 5px;
+            background: #000;
+            box-sizing: border-box;
+        }
+
+        .log-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #111;
+            font-size: 0.9em;
+        }
+
+        .status-bar {
+            margin-top: 20px;
+            font-size: 0.8em;
+            text-align: center;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>🧬 HelixNode LIMS</h1>
+
+        <div class="input-section">
+            <label>INPUT DNA SEQUENCE (RAW):</label>
+            <input type="text" id="dnaInput" placeholder="GATTACA..." onkeypress="handleEnter(event)">
+            <button onclick="processDNA()">TRANSMIT TO EDGE NODE</button>
+        </div>
+
+        <div id="resultArea" class="result-box">
+            <div>GC CONTENT DETECTED</div>
+            <div class="big-text" id="gcDisplay">0%</div>
+            <div class="sub-text" id="idDisplay">ID: ---</div>
+        </div>
+
+        <div class="log-section">
+            <div class="log-header">
+                <span>DATABASE ENTRIES</span>
+                <div class="log-controls">
+                    <button class="fetch-btn" onclick="fetchLogs()">FETCH DB</button>
+                    <button class="fetch-btn clear-btn" onclick="clearLogs()">CLEAR</button>
+                </div>
+            </div>
+
+            <div id="logListWrapper">
+                <div id="logList" style="color: #444; text-align: center; padding: 20px;">
+                    Click 'FETCH DB' to view records...
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar" id="connectionStatus">
+            Connecting to Realme 2 Pro Backend...
+        </div>
+    </div>
+
+    <script>
+        // this is empty for universal access
+        const API_URL = "";
+
+        // 1. Send Data Function
+        async function processDNA() {
+            const input = document.getElementById('dnaInput');
+            const resultBox = document.getElementById('resultArea');
+            const seq = input.value.trim();
+
+            if (!seq) return;
+
+            const btn = document.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "PROCESSING ON ARM64 CPU...";
+
+            try {
+                const response = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sequence: seq })
+                });
+
+                if (!response.ok) throw new Error("Server Error");
+
+                const data = await response.json();
+
+                document.getElementById('gcDisplay').innerText = data.gc_content + "%";
+                document.getElementById('idDisplay').innerText = "ASSIGNED ID: " + data.formatted_id;
+                resultBox.style.display = 'block';
+                input.value = "";
+
+
+            } catch (error) {
+                alert("Connection Failed! Is the phone server running?");
+            } finally {
+                btn.innerText = originalText;
+            }
+        }
+
+        async function fetchLogs() {
+            const list = document.getElementById('logList');
+            list.innerHTML = "Loading...";
+
+            try {
+                const res = await fetch(`${API_URL}/stats`);
+                const data = await res.json();
+
+                list.innerHTML = ""; // clear old data
+
+                if (data.recent_logs.length === 0) {
+                    list.innerHTML = "Database is empty.";
+                } else {
+                    data.recent_logs.forEach(log => {
+                        list.innerHTML += `
+                            <div class="log-row">
+                                <span>${log.id}</span>
+                                <span>GC: ${log.gc.toFixed(1)}%</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                updateStatus(true, data.total_samples);
+
+            } catch (e) {
+                list.innerHTML = "Error fetching data.";
+                updateStatus(false);
+            }
+        }
+
+        function clearLogs() {
+            const list = document.getElementById('logList');
+            list.innerHTML = "Click 'FETCH DB' to view records...";
+        }
+
+        async function checkConnection() {
+            try {
+                const res = await fetch(`${API_URL}/stats`);
+                const data = await res.json();
+                updateStatus(true, data.total_samples);
+            } catch (e) {
+                updateStatus(false);
+            }
+        }
+
+        function updateStatus(online, count = 0) {
+            const statusDiv = document.getElementById('connectionStatus');
+            if (online) {
+                statusDiv.innerText = `CONNECTED | TOTAL SAMPLES IN DB: ${count}`;
+                statusDiv.style.color = "#00ff41";
+            } else {
+                statusDiv.innerText = "DISCONNECTED - CHECK PHONE SERVER";
+                statusDiv.style.color = "red";
+            }
+        }
+
+        function handleEnter(e) { if (e.key === 'Enter') processDNA(); }
+
+        setInterval(checkConnection, 5000);
+        checkConnection();
+    </script>
+</body>
+
+</html>
