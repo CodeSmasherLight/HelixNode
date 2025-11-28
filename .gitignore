@@ -9,3 +9,4 @@ pg/
 logfile
 *.log
 ngrok
+*.tgz
