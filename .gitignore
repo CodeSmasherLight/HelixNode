@@ -1,5 +1,11 @@
 venv/
 __pycache__/
-pg/
 *.pyc
+
+pg/
+
 .DS_Store
+
+logfile
+*.log
+ngrok
