@@ -40,7 +40,9 @@ Some Python libraries required heavy native compilation on ARM64, which caused t
 - **Frontend:** Server rendered HTML/js dashboard  
 
 ---
-## Screenshots
+## Recording & screenshots
+
+>*watch the system boot up demo on twitter here: https://x.com/equal_to_light/status/1994857674903883864?s=20*
 
 ### 1. Dashboard UI with logs
 <img width="711" height="836" alt="image" src="https://github.com/user-attachments/assets/1215e7ec-c45a-455f-83f8-939a060fd89d" />
